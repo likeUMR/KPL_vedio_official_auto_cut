@@ -239,6 +239,31 @@ def planned_segments(
     return planned
 
 
+def source_time_ranges(scene: dict[str, Any], segment: dict[str, Any]) -> list[dict[str, float | str | None]]:
+    source_start = scene.get("source_scene_start")
+    if source_start is None:
+        return []
+    base = float(source_start)
+    components = segment.get("components") or [
+        {"role": segment.get("kind"), "start": segment.get("start"), "end": segment.get("end")}
+    ]
+    ranges = []
+    for component in components:
+        if component.get("start") is None or component.get("end") is None:
+            continue
+        start = base + float(component["start"])
+        end = base + float(component["end"])
+        ranges.append(
+            {
+                "role": component.get("role"),
+                "start": round(start, 3),
+                "end": round(end, 3),
+                "duration": round(end - start, 3),
+            }
+        )
+    return ranges
+
+
 def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
     input_path = Path(scene["path"])
     scene_dir = output_dir / sanitize_filename(input_path.parent.name)
@@ -282,6 +307,7 @@ def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namesp
                     )
             else:
                 cut_clip(input_path, output_path, segment["start"], segment["end"], args.copy, args.overwrite)
+        ranges = source_time_ranges(scene, segment)
         segment_records.append(
             {
                 "index": index,
@@ -290,6 +316,11 @@ def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namesp
                 "start": round(segment["start"], 3),
                 "end": round(segment["end"], 3),
                 "duration": segment["duration"],
+                "source_video_path": scene.get("source_video_path"),
+                "source_video_time_ranges": ranges,
+                "source_video_start": ranges[0]["start"] if ranges else None,
+                "source_video_end": ranges[-1]["end"] if ranges else None,
+                "source_video_duration": round(sum(float(item["duration"]) for item in ranges), 3) if ranges else None,
                 "components": [
                     {
                         "role": component["role"],
@@ -310,6 +341,12 @@ def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namesp
         "split_time": scene["split_time"],
         "opening_effect_end": opening_effect_end,
         "input_path": str(input_path),
+        "source_video_path": scene.get("source_video_path"),
+        "source_scene_start": scene.get("source_scene_start"),
+        "source_scene_end": scene.get("source_scene_end"),
+        "source_scene_duration": scene.get("source_scene_duration"),
+        "untrimmed_source_scene_start": scene.get("untrimmed_source_scene_start"),
+        "untrimmed_source_scene_end": scene.get("untrimmed_source_scene_end"),
         "duration": scene["duration"],
         "segment_count": len(segment_records),
         "segments": segment_records,

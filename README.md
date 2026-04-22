@@ -1,5 +1,9 @@
 # KPL Official Video Auto Cut Pipeline
 
+## License and Use Restriction
+
+This repository is created solely for participation in the Tencent Kaiwu 2026 Esports Multimodal Content Creation track. Unauthorized redistribution, copying, adaptation, commercial use, or other reuse is prohibited. See [LICENSE](LICENSE) for the full restricted-use terms.
+
 This project builds a reproducible pipeline for collecting official KPL match/video data, downloading top official highlight videos, cutting them into individual highlight scenes, splitting complete-view/focus-view parts, OCRing scene metadata, and matching scenes back to official match schedules.
 
 The workflow is designed for local research and dataset preparation. Generated videos, full crawled datasets, OCR crops, and checkpoints are intentionally ignored by git. Lightweight summary charts and category statistics are published under `docs/`.

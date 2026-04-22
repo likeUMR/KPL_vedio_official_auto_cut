@@ -101,7 +101,7 @@ def cut_clip(input_path: Path, output_path: Path, end: float, copy: bool, overwr
     subprocess.run(command, check=True)
 
 
-def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
+def process_scene(scene: dict[str, Any], source_video_path: str, output_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
     input_path = Path(scene["output_path"])
     duration = video_duration(input_path)
     trimmed_duration = max(0.0, duration - args.trim_seconds)
@@ -114,10 +114,21 @@ def process_scene(scene: dict[str, Any], output_dir: Path, args: argparse.Namesp
     if not args.dry_run:
         cut_clip(input_path, output_path, trimmed_duration, args.copy, args.overwrite)
 
+    source_scene_start = float(scene.get("start") or 0.0)
+    source_scene_end = source_scene_start + trimmed_duration
+    if scene.get("end") is not None:
+        source_scene_end = min(float(scene["end"]), source_scene_end)
+
     return {
         "index": scene["index"],
         "input_path": str(input_path),
         "output_path": str(output_path),
+        "source_video_path": source_video_path,
+        "source_scene_start": round(source_scene_start, 3),
+        "source_scene_end": round(source_scene_end, 3),
+        "source_scene_duration": round(source_scene_end - source_scene_start, 3),
+        "untrimmed_source_scene_start": scene.get("start"),
+        "untrimmed_source_scene_end": scene.get("end"),
         "original_duration": round(duration, 3),
         "trimmed_duration": round(trimmed_duration, 3),
         "removed_tail_duration": round(duration - trimmed_duration, 3),
@@ -145,7 +156,7 @@ def main() -> int:
         scene_records = []
         for scene in video.get("scenes", []):
             total_scenes += 1
-            record = process_scene(scene, output_dir, args)
+            record = process_scene(scene, str(video["input_path"]), output_dir, args)
             if record["trimmed"]:
                 trimmed_scenes += 1
             print(

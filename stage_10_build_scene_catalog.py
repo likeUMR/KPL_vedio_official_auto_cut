@@ -56,6 +56,10 @@ def scene_key(row: dict[str, Any]) -> tuple[int, int]:
     return (int(row["video_index"]), int(row["scene_index"]))
 
 
+def nested_segment_key(scene: dict[str, Any], segment: dict[str, Any]) -> tuple[int, int, int]:
+    return (int(scene["video_index"]), int(scene["scene_index"]), int(segment["index"]))
+
+
 def index_segments(rows: list[dict[str, Any]]) -> dict[tuple[int, int, int], dict[str, Any]]:
     return {segment_key(row): row for row in rows}
 
@@ -120,20 +124,17 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
     flat_rows = []
     for scene in segment_manifest.get("scenes", []):
         scene_segments = scene.get("segments", [])
-        key = scene_key(scene)
-        title_rows = [title_by_segment[segment_key(segment)] for segment in scene_segments if segment_key(segment) in title_by_segment]
+        title_rows = [
+            title_by_segment[nested_segment_key(scene, segment)]
+            for segment in scene_segments
+            if nested_segment_key(scene, segment) in title_by_segment
+        ]
         title_info = best_title_for_scene(title_rows)
         segment_records = []
         match_ids = []
 
         for segment in scene_segments:
-            skey = segment_key(
-                {
-                    "video_index": scene["video_index"],
-                    "scene_index": scene["scene_index"],
-                    "segment_index": segment["index"],
-                }
-            )
+            skey = nested_segment_key(scene, segment)
             title_row = title_by_segment.get(skey, {})
             team_row = team_by_segment.get(skey, {})
             match_row = match_by_segment.get(skey, {})
@@ -147,6 +148,11 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
                 "start": segment.get("start"),
                 "end": segment.get("end"),
                 "duration": segment.get("duration"),
+                "source_video_path": segment.get("source_video_path") or scene.get("source_video_path"),
+                "source_video_start": segment.get("source_video_start"),
+                "source_video_end": segment.get("source_video_end"),
+                "source_video_duration": segment.get("source_video_duration"),
+                "source_video_time_ranges": segment.get("source_video_time_ranges", []),
                 "path": segment.get("output_path"),
                 "scene_title": title_row.get("scene_title"),
                 "operator_team_text": title_row.get("team"),
@@ -167,6 +173,12 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
             "has_focus": any(segment.get("kind") == "focus" for segment in scene_segments),
             "duration": scene.get("duration"),
             "input_path": scene.get("input_path"),
+            "source_video_path": scene.get("source_video_path"),
+            "source_scene_start": scene.get("source_scene_start"),
+            "source_scene_end": scene.get("source_scene_end"),
+            "source_scene_duration": scene.get("source_scene_duration"),
+            "untrimmed_source_scene_start": scene.get("untrimmed_source_scene_start"),
+            "untrimmed_source_scene_end": scene.get("untrimmed_source_scene_end"),
             **title_info,
             "scheduleid": selected_scheduleid,
             "seasonid": selected_schedule.get("seasonid") if selected_schedule else None,
@@ -189,6 +201,10 @@ def build_catalog(args: argparse.Namespace) -> dict[str, Any]:
                 "classification": scene_record["classification"],
                 "has_complete": scene_record["has_complete"],
                 "has_focus": scene_record["has_focus"],
+                "source_video_path": scene_record.get("source_video_path"),
+                "source_scene_start": scene_record.get("source_scene_start"),
+                "source_scene_end": scene_record.get("source_scene_end"),
+                "source_scene_duration": scene_record.get("source_scene_duration"),
                 "scene_title": scene_record.get("scene_title"),
                 "operator_team_text": scene_record.get("operator_team_text"),
                 "operator": scene_record.get("operator"),
@@ -228,6 +244,10 @@ def write_csv(rows: list[dict[str, Any]], path: Path) -> None:
         "classification",
         "has_complete",
         "has_focus",
+        "source_video_path",
+        "source_scene_start",
+        "source_scene_end",
+        "source_scene_duration",
         "scene_title",
         "operator_team_text",
         "operator",
