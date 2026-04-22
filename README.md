@@ -38,6 +38,22 @@ Published summary tables:
 - `docs/results/kpl_video_category_stats.csv`
 - `docs/results/kpl_video_category_stats.json`
 
+### Stage 5: Full Official Video Coverage
+
+These figures summarize the enriched official KPL video catalogue. They are meant to make the crawl coverage visible without committing the full raw dataset.
+
+Official video count by upload year:
+
+![Official video yearly coverage](docs/assets/plots/official_video_yearly_coverage.png)
+
+Official video count by title-prefix category:
+
+![Official video category counts](docs/assets/plots/official_video_category_counts.png)
+
+Official video category share:
+
+![Official video category share](docs/assets/plots/official_video_category_share.png)
+
 Top-5 title-prefix category duration distribution:
 
 ![Top category duration distribution](docs/assets/plots/top5_categories_duration_distribution.png)
@@ -49,6 +65,30 @@ Top-5 title-prefix category play-count distribution:
 Top-5 title-prefix category yearly video counts:
 
 ![Top category yearly video counts](docs/assets/plots/top5_categories_yearly_video_counts.png)
+
+### Stage 10: Highlight Scene Processing
+
+These figures summarize the already-processed top official highlight videos: transition detection, scene splitting, complete/focus segmentation, OCR, and schedule matching.
+
+Highlight processing funnel:
+
+![Highlight processing funnel](docs/assets/plots/stage10_highlights/highlight_processing_funnel.png)
+
+Scene complete/focus classification:
+
+![Highlight scene classification](docs/assets/plots/stage10_highlights/highlight_scene_classification.png)
+
+Processed highlight segments by year and kind:
+
+![Highlight segments by year and kind](docs/assets/plots/stage10_highlights/highlight_segments_by_year_kind.png)
+
+Detected highlight scene duration distribution:
+
+![Highlight scene duration distribution](docs/assets/plots/stage10_highlights/highlight_scene_duration_distribution.png)
+
+Schedule matching quality:
+
+![Highlight schedule match quality](docs/assets/plots/stage10_highlights/highlight_schedule_match_quality.png)
 
 ## Full Pipeline
 
@@ -136,7 +176,7 @@ Cut scenes, trim tails, split complete/focus segments, OCR, and build the final 
 - `stage_07_split_scenes_by_bw_filter.py`, `stage_07_build_boundary_brightness_template.py`, and `stage_07_trim_scene_tails.py`: black/white transition detection, false-boundary filtering, scene cutting, and tail trimming.
 - `stage_08_analyze_complete_focus.py` and `stage_08_split_complete_focus_segments.py`: complete/focus classification and final segment writing.
 - `stage_09_extract_title_regions.py` and `stage_09_ocr_scene_titles.py`: title/operator OCR.
-- `stage_10_ocr_side_player_teams.py`, `stage_10_match_segments_to_schedules.py`, and `stage_10_build_scene_catalog.py`: side player-list OCR, schedule matching, and final catalog building.
+- `stage_10_ocr_side_player_teams.py`, `stage_10_match_segments_to_schedules.py`, `stage_10_build_scene_catalog.py`, and `stage_10_plot_highlight_processing.py`: side player-list OCR, schedule matching, final catalog building, and processed-highlight plots.
 
 ## Data Policy
 
