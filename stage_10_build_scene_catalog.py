@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--segment-manifest",
         default="downloads/pipeline/segments/complete_focus_segment_manifest.json",
-        help="Manifest produced by split_complete_focus_segments.py.",
+        help="Manifest produced by stage_08_split_complete_focus_segments.py.",
     )
     parser.add_argument(
         "--title-ocr",

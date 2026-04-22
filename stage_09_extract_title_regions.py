@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         default="downloads/kpl_highlights_top1_by_year_scene_segments_complete_focus_with_intro/complete_focus_segment_manifest.json",
-        help="Segment manifest produced by split_complete_focus_segments.py.",
+        help="Segment manifest produced by stage_08_split_complete_focus_segments.py.",
     )
     parser.add_argument(
         "--output-dir",

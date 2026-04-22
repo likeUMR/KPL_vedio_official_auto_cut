@@ -38,6 +38,8 @@ competition_submission_materials/
 *.jpg
 *.jpeg
 *.png
+*.csv
+*.json
 
 # Keep source and documentation trackable even if generated files exist nearby.
 !README.md
@@ -46,3 +48,8 @@ competition_submission_materials/
 !archive/
 !archive/**/*.md
 !archive/**/*.py
+!docs/
+!docs/**/*.md
+!docs/**/*.png
+!docs/**/*.csv
+!docs/**/*.json

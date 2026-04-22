@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--team-ocr",
         default="data/match_ui_team_roi_ocr/match_ui_team_roi_ocr.json",
-        help="Team ROI OCR JSON from ocr_match_ui_team_rois.py.",
+        help="Side player-list team OCR JSON from stage_10_ocr_side_player_teams.py.",
     )
     parser.add_argument(
         "--schedules",

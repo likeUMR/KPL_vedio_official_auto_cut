@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--candidates",
         default="data/segment_title_region_candidates/segment_title_region_candidates.json",
-        help="Candidate JSON produced by extract_segment_title_regions.py.",
+        help="Candidate JSON produced by stage_09_extract_title_regions.py.",
     )
     parser.add_argument(
         "--output-dir",

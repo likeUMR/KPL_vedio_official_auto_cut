@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-"""Extract the top-played 精彩集锦 videos for each upload year."""
+"""Select the top-played highlight-category videos for each upload year."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import math
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
-PREFIX_PATTERN = re.compile(r"^\s*【([^】]+)】")
+TITLE_PREFIX_LEFT = chr(0x3010)
+TITLE_PREFIX_RIGHT = chr(0x3011)
+DEFAULT_HIGHLIGHT_CATEGORY = "".join(chr(code) for code in [0x7CBE, 0x5F69, 0x96C6, 0x9526])
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Pick the top-played 精彩集锦 videos for each year."
-    )
+    parser = argparse.ArgumentParser(description="Pick the top-played highlight-category videos for each year.")
     parser.add_argument(
         "--input",
         default="data/kpl_programmes_enriched.json",
@@ -31,8 +30,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--category",
-        default="精彩集锦",
-        help="Title-prefix category to extract. Default: 精彩集锦",
+        default=DEFAULT_HIGHLIGHT_CATEGORY,
+        help="Title-prefix category to extract. Default: highlight category.",
     )
     parser.add_argument(
         "--top-n",
@@ -44,8 +43,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def category_from_title(title: str) -> str:
-    match = PREFIX_PATTERN.match(title or "")
-    return match.group(1).strip() if match else "无前缀"
+    stripped = (title or "").strip()
+    if stripped.startswith(TITLE_PREFIX_LEFT):
+        end = stripped.find(TITLE_PREFIX_RIGHT, len(TITLE_PREFIX_LEFT))
+        if end > 0:
+            return stripped[len(TITLE_PREFIX_LEFT) : end].strip()
+    return "NO_PREFIX"
 
 
 def to_number(value: Any) -> float | None:
@@ -136,11 +139,12 @@ def main() -> int:
                 ],
             }
         )
+
     output = {
         "metadata": {
             "input": args.input,
             "category": args.category,
-            "category_rule": "Use leading full-width bracket prefix like 【精彩集锦】.",
+            "category_rule": "Use the leading full-width title prefix between U+3010 and U+3011.",
             "top_n_per_year": args.top_n,
             "scanned_category_videos_with_year_and_play_count": scanned,
             "year_count": len(results),

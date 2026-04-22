@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         default="downloads/kpl_highlights_top1_by_year_scenes_brightness_filtered/scene_split_manifest.json",
-        help="Manifest produced by split_highlight_scenes.py.",
+        help="Manifest produced by stage_07_split_scenes_by_bw_filter.py.",
     )
     parser.add_argument(
         "--output-dir",

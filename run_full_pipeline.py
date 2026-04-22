@@ -84,13 +84,14 @@ def paths() -> dict[str, Path]:
 
 def build_steps(args: argparse.Namespace) -> list[Step]:
     p = paths()
+    highlight_category = "".join(chr(code) for code in [0x7CBE, 0x5F69, 0x96C6, 0x9526])
     return [
         Step(
             "01_fetch_schedules",
             "Fetch all official KPL schedules and save the raw schedule list.",
             [
                 py(
-                    "fetch_kpl_schedules.py",
+                    "stage_01_fetch_schedules.py",
                     "--output-dir",
                     p["data"],
                     "--sleep",
@@ -103,7 +104,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Fetch each match detail, results, per-round hero selections, and official playback links; overwrite schedule outputs.",
             [
                 py(
-                    "enrich_kpl_schedule_details.py",
+                    "stage_02_enrich_schedules.py",
                     "--input",
                     p["schedules"],
                     "--output",
@@ -120,7 +121,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Fetch all KPL official programme/video records.",
             [
                 py(
-                    "fetch_kpl_programmes.py",
+                    "stage_03_fetch_videos.py",
                     "--output-dir",
                     p["data"],
                     "--page-size",
@@ -135,7 +136,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Fetch Tencent Video detail fields such as play count, likes, description, tags, duration, and cover; overwrite video outputs.",
             [
                 py(
-                    "enrich_kpl_video_details.py",
+                    "stage_04_enrich_videos.py",
                     "--input",
                     p["programmes"],
                     "--output",
@@ -152,7 +153,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Analyze title-prefix categories and draw plots.",
             [
                 py(
-                    "analyze_kpl_video_stats.py",
+                    "stage_05_analyze_video_stats.py",
                     "--input",
                     p["programmes_enriched"],
                     "--output",
@@ -161,7 +162,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     p["video_stats_csv"],
                 ),
                 py(
-                    "plot_kpl_top_categories.py",
+                    "stage_05_plot_video_stats.py",
                     "--input",
                     p["programmes_enriched"],
                     "--output-dir",
@@ -176,18 +177,18 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Select each year's top-N played highlight-category videos and download best available KPL MP4 not above 1080p.",
             [
                 py(
-                    "extract_top_highlight_by_year.py",
+                    "stage_06_select_top_highlights.py",
                     "--input",
                     p["programmes_enriched"],
                     "--output",
                     p["top_highlights"],
                     "--category",
-                    "\u3010\u7cbe\u5f69\u96c6\u9526\u3011",
+                    highlight_category,
                     "--top-n",
                     args.top_n,
                 ),
                 py(
-                    "download_kpl_videos.py",
+                    "stage_06_download_highlights.py",
                     "--input",
                     p["top_highlights"],
                     "--output-dir",
@@ -205,7 +206,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Detect black/white transition effects, build brightness template, re-split with luminance filtering, then trim every scene tail by 5 seconds.",
             [
                 py(
-                    "split_highlight_scenes.py",
+                    "stage_07_split_scenes_by_bw_filter.py",
                     "--input-dir",
                     p["downloaded"],
                     "--output-dir",
@@ -213,7 +214,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     "--overwrite",
                 ),
                 py(
-                    "analyze_boundary_brightness_template.py",
+                    "stage_07_build_boundary_brightness_template.py",
                     "--manifest",
                     p["scenes_raw"] / "scene_split_manifest.json",
                     "--output-dir",
@@ -222,7 +223,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     4,
                 ),
                 py(
-                    "split_highlight_scenes.py",
+                    "stage_07_split_scenes_by_bw_filter.py",
                     "--input-dir",
                     p["downloaded"],
                     "--output-dir",
@@ -232,7 +233,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     "--overwrite",
                 ),
                 py(
-                    "trim_scene_tails.py",
+                    "stage_07_trim_scene_tails.py",
                     "--manifest",
                     p["scenes_raw"] / "scene_split_manifest.json",
                     "--output-dir",
@@ -249,14 +250,14 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Classify each scene as complete-only, focus-only, or complete-then-focus; focus clips keep the opening black/white filter intro.",
             [
                 py(
-                    "analyze_scene_complete_focus_split.py",
+                    "stage_08_analyze_complete_focus.py",
                     "--manifest",
                     p["scenes"] / "scene_tail_trim_manifest.json",
                     "--output-dir",
                     p["complete_focus_analysis"],
                 ),
                 py(
-                    "split_complete_focus_segments.py",
+                    "stage_08_split_complete_focus_segments.py",
                     "--analysis",
                     p["complete_focus_analysis"] / "complete_focus_split_analysis.json",
                     "--output-dir",
@@ -271,7 +272,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Extract colorful title/operator regions from the black/white filter frame and OCR scene title, operator, and operator team text.",
             [
                 py(
-                    "extract_segment_title_regions.py",
+                    "stage_09_extract_title_regions.py",
                     "--manifest",
                     p["segments"] / "complete_focus_segment_manifest.json",
                     "--output-dir",
@@ -280,7 +281,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     1.5,
                 ),
                 py(
-                    "ocr_segment_titles.py",
+                    "stage_09_ocr_scene_titles.py",
                     "--candidates",
                     p["title_regions"] / "segment_title_region_candidates.json",
                     "--output-dir",
@@ -293,7 +294,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
             "Use side player-list OCR to infer match teams, match to official schedules, then build the final scene catalog.",
             [
                 py(
-                    "ocr_side_player_team_rois.py",
+                    "stage_10_ocr_side_player_teams.py",
                     "--manifest",
                     p["segments"] / "complete_focus_segment_manifest.json",
                     "--schedules",
@@ -304,7 +305,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     1.5,
                 ),
                 py(
-                    "match_segments_to_schedules.py",
+                    "stage_10_match_segments_to_schedules.py",
                     "--team-ocr",
                     p["side_team_ocr"] / "side_player_team_ocr.json",
                     "--schedules",
@@ -317,7 +318,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                     31,
                 ),
                 py(
-                    "build_scene_catalog.py",
+                    "stage_10_build_scene_catalog.py",
                     "--segment-manifest",
                     p["segments"] / "complete_focus_segment_manifest.json",
                     "--title-ocr",

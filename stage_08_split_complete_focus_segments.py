@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--analysis",
         default="data/complete_focus_split_analysis/complete_focus_split_analysis.json",
-        help="Analysis JSON produced by analyze_scene_complete_focus_split.py.",
+        help="Analysis JSON produced by stage_08_analyze_complete_focus.py.",
     )
     parser.add_argument(
         "--output-dir",

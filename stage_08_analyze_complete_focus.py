@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         default="downloads/kpl_highlights_top1_by_year_scenes_brightness_filtered_trim5s/scene_tail_trim_manifest.json",
-        help="Manifest produced by trim_scene_tails.py.",
+        help="Manifest produced by stage_07_trim_scene_tails.py.",
     )
     parser.add_argument(
         "--output-dir",

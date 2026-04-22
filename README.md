@@ -2,7 +2,7 @@
 
 This project builds a reproducible pipeline for collecting official KPL match/video data, downloading top official highlight videos, cutting them into individual highlight scenes, splitting complete-view/focus-view parts, OCRing scene metadata, and matching scenes back to official match schedules.
 
-The workflow is designed for local research and dataset preparation. Generated videos, crawled data, OCR crops, plots, and checkpoints are intentionally ignored by git.
+The workflow is designed for local research and dataset preparation. Generated videos, full crawled datasets, OCR crops, and checkpoints are intentionally ignored by git. Lightweight summary charts and category statistics are published under `docs/`.
 
 ## What It Does
 
@@ -11,7 +11,7 @@ The workflow is designed for local research and dataset preparation. Generated v
 3. Fetch all KPL official video/programme records.
 4. Enrich each video with Tencent Video detail fields such as play count, likes, description, tags, aspect ratio, and duration.
 5. Analyze title-prefix categories and draw distribution plots.
-6. Select the top-N played `【精彩集锦】` videos per year and download the best available KPL MP4 not above 1080p.
+6. Select the top-N played official highlight videos per year and download the best available KPL MP4 not above 1080p.
 7. Detect black/white transition effects with luminance-histogram filtering, cut scenes, and trim each scene tail by 5 seconds.
 8. Split each scene into complete/focus segments; focus segments keep the opening black/white title/filter phase.
 9. OCR scene title, operator, and operator team from the stylized colored title region.
@@ -28,6 +28,27 @@ pip install opencv-python numpy matplotlib rapidocr-onnxruntime
 ```
 
 Some steps call public KPL/Tencent endpoints. Use conservative worker counts if endpoints start returning rate-limit or timeout errors.
+
+## Example Analysis
+
+The repository includes lightweight analysis outputs generated from enriched official KPL video metadata. Full raw crawls and videos remain local-only.
+
+Published summary tables:
+
+- `docs/results/kpl_video_category_stats.csv`
+- `docs/results/kpl_video_category_stats.json`
+
+Top-5 title-prefix category duration distribution:
+
+![Top category duration distribution](docs/assets/plots/top5_categories_duration_distribution.png)
+
+Top-5 title-prefix category play-count distribution:
+
+![Top category play count distribution](docs/assets/plots/top5_categories_play_count_distribution.png)
+
+Top-5 title-prefix category yearly video counts:
+
+![Top category yearly video counts](docs/assets/plots/top5_categories_yearly_video_counts.png)
 
 ## Full Pipeline
 
@@ -59,46 +80,46 @@ The pipeline stores command metadata at:
 Fetch official schedules:
 
 ```powershell
-python .\fetch_kpl_schedules.py
+python .\stage_01_fetch_schedules.py
 ```
 
 Enrich schedules with match details, round hero picks, and replay links:
 
 ```powershell
-python .\enrich_kpl_schedule_details.py --resume
+python .\stage_02_enrich_schedules.py --resume
 ```
 
 Fetch official video records:
 
 ```powershell
-python .\fetch_kpl_programmes.py
+python .\stage_03_fetch_videos.py
 ```
 
 Enrich video records with Tencent detail-page fields:
 
 ```powershell
-python .\enrich_kpl_video_details.py --resume
+python .\stage_04_enrich_videos.py --resume
 ```
 
 The schedule and video enrichment scripts both support adaptive parallelism:
 
 ```powershell
-python .\enrich_kpl_schedule_details.py --max-workers 32 --min-workers 4 --resume
-python .\enrich_kpl_video_details.py --max-workers 16 --min-workers 2 --resume
+python .\stage_02_enrich_schedules.py --max-workers 32 --min-workers 4 --resume
+python .\stage_04_enrich_videos.py --max-workers 16 --min-workers 2 --resume
 ```
 
 Analyze and plot video categories:
 
 ```powershell
-python .\analyze_kpl_video_stats.py
-python .\plot_kpl_top_categories.py
+python .\stage_05_analyze_video_stats.py
+python .\stage_05_plot_video_stats.py
 ```
 
 Select top highlight videos and download:
 
 ```powershell
-python .\extract_top_highlight_by_year.py --top-n 3
-python .\download_kpl_videos.py --input .\data\top_jingcai_jijin_by_year.json --output-dir .\downloads\pipeline\selected_highlights --max-height 1080 --overwrite
+python .\stage_06_select_top_highlights.py --top-n 3
+python .\stage_06_download_highlights.py --input .\data\top_jingcai_jijin_by_year.json --output-dir .\downloads\pipeline\selected_highlights --max-height 1080 --overwrite
 ```
 
 Cut scenes, trim tails, split complete/focus segments, OCR, and build the final catalog are orchestrated by `run_full_pipeline.py`.
@@ -106,28 +127,30 @@ Cut scenes, trim tails, split complete/focus segments, OCR, and build the final 
 ## Important Scripts
 
 - `run_full_pipeline.py`: end-to-end orchestration, dry-run by default.
-- `build_scene_catalog.py`: merges segment cuts, title OCR, side UI OCR, and schedule matches into the final catalog.
-- `fetch_kpl_schedules.py`: official KPL season/stage/team and schedule fetcher.
-- `enrich_kpl_schedule_details.py`: adaptive parallel detail fetcher for match results, round hero picks, and replay links.
-- `fetch_kpl_programmes.py`: official KPL programme/video metadata fetcher.
-- `enrich_kpl_video_details.py`: adaptive parallel Tencent detail enrichment.
-- `split_highlight_scenes.py`: black/white-filter boundary detector and scene cutter.
-- `analyze_boundary_brightness_template.py`: builds luminance histogram template to reject false transition detections.
-- `analyze_scene_complete_focus_split.py`: detects complete-view to focus-view splits.
-- `split_complete_focus_segments.py`: writes final complete/focus segment videos.
-- `extract_segment_title_regions.py` and `ocr_segment_titles.py`: title/operator OCR.
-- `ocr_side_player_team_rois.py`: side player-list OCR for match team inference.
-- `match_segments_to_schedules.py`: matches scene teams to official schedules with upload-time constraints.
+- `stage_01_fetch_schedules.py`: official KPL season/stage/team and schedule fetcher.
+- `stage_02_enrich_schedules.py`: adaptive parallel detail fetcher for match results, round hero picks, and replay links.
+- `stage_03_fetch_videos.py`: official KPL programme/video metadata fetcher.
+- `stage_04_enrich_videos.py`: adaptive parallel Tencent detail enrichment.
+- `stage_05_analyze_video_stats.py` and `stage_05_plot_video_stats.py`: category stats and plots.
+- `stage_06_select_top_highlights.py` and `stage_06_download_highlights.py`: yearly top highlight selection and download.
+- `stage_07_split_scenes_by_bw_filter.py`, `stage_07_build_boundary_brightness_template.py`, and `stage_07_trim_scene_tails.py`: black/white transition detection, false-boundary filtering, scene cutting, and tail trimming.
+- `stage_08_analyze_complete_focus.py` and `stage_08_split_complete_focus_segments.py`: complete/focus classification and final segment writing.
+- `stage_09_extract_title_regions.py` and `stage_09_ocr_scene_titles.py`: title/operator OCR.
+- `stage_10_ocr_side_player_teams.py`, `stage_10_match_segments_to_schedules.py`, and `stage_10_build_scene_catalog.py`: side player-list OCR, schedule matching, and final catalog building.
 
 ## Data Policy
 
-Generated artifacts are not tracked:
+Heavy/generated artifacts are not tracked:
 
 - downloaded source videos and cut clips
-- crawled/enriched JSON/CSV outputs
+- full crawled/enriched JSON/CSV outputs
 - OCR crops and review images
-- plots
 - checkpoint files
 - Python caches
 
-This keeps the repository small and focused on reproducible code.
+Tracked lightweight outputs:
+
+- selected analysis plots in `docs/assets/plots/`
+- selected category statistics in `docs/results/`
+
+This keeps the repository small while still giving the GitHub page a useful preview of the analysis.

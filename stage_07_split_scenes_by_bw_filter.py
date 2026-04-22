@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
         "--brightness-template",
         default=None,
         help=(
-            "Optional template JSON from analyze_boundary_brightness_template.py. "
+            "Optional template JSON from stage_07_build_boundary_brightness_template.py. "
             "When set, low-saturation effect candidates are kept only if their 5th-frame "
             "luminance histogram is similar enough to the valid transition template."
         ),
