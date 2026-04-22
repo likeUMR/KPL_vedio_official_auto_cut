@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Tooling and editor noise
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
+
+# Generated data and media
+data/
+downloads/
+competition_submission_materials/
+
+# Generated archives/checkpoints/review artifacts
+*.checkpoint.json
+*.checkpoint.csv
+*.tmp.json
+*.tmp.csv
+*.zip
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.jpg
+*.jpeg
+*.png
+
+# Keep source and documentation trackable even if generated files exist nearby.
+!README.md
+!.gitignore
+!*.py
+!archive/
+!archive/**/*.md
+!archive/**/*.py
